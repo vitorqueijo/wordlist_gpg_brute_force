@@ -28,7 +28,7 @@ def decrypt_gpg(gpg_file):
 	gpg = gnupg.GPG()
 	with open(gpg_file, 'rb') as f:
 		decrypted_file = gpg.decrypt_file(f, passphrase=password_attempt)
-	if decrypted_file.ok:
-		print('status: ', decrypted_file.status)
-		print('stderr: ', decrypted_file.stderr)
+		if decrypted_file.ok:
+			print('status: ', decrypted_file.status)
+			print('stderr: ', decrypted_file.stderr)
 
