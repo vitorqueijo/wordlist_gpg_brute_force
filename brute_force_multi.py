@@ -3,16 +3,23 @@ import sys
 import time
 
 import multiprocessing as mp
-from itertools import product
-from contextlib import contextmanager
 import gnupg
 
+
+def worker(input, output):
+    for func, args in iter(input.get, 'STOP'):
+        result = calculate(func, args)
+        output.put(result)
+
+def calculate(func, args):
+    result = func(*args)
+    return '%s says that %s%s = %s' % \
+        (mp.current_process().name, func.__name__, args, result)
 
 def divide_list(wordlist, num_to_split):
 	if num_to_split > mp.cpu_count():
 		print("Changing to {} as a default".format(mp.cpu_count()))
 		num_to_split = mp.cpu_count()
-	num_to_split = 4
 	splitted_wordlists = list()
 	n_wordlist = list()
 	try:
@@ -30,30 +37,19 @@ def divide_list(wordlist, num_to_split):
 		print(exception)
 	return splitted_wordlists
 
-def brute_force_simple(wordlist):
-	target = '' # edit to your GPG file
+def brute_force_simple(wordlist, gpg_file, time_count):
+	target = 'lab1.txt' # edit to your GPG file
 	gpg = gnupg.GPG()
 	for pwd in wordlist:
 		try:
-			with open(target, 'rb') as f:
-				decrypted_file = gpg.decrypt_file(f, 
-							passphrase=pwd)
-				if decrypted_file.ok:
-					print('status: ', decrypted_file.status)
-					print('stderr: ', decrypted_file.stderr)
-					return pwd
+			decrypted_file = gpg.decrypt_file(gpg_file, passphrase=pwd)
+			if decrypted_file.ok:
+				print('status: ', decrypted_file.status)
+				print('stderr: ', decrypted_file.stderr)
+				return pwd
 		except Exception as e:
 			print("Exception: ", e)
-
-
-def brute_force_simple_unpack(args):
-	return brute_force_simple(*args)
-
-@contextmanager
-def poolcontext(*args, **kwargs):
-    pool = mp.Pool(*args, **kwargs)
-    yield pool
-    pool.terminate()
+	return "not yet {}".format(time.time() - time_count)
 
 if __name__ == "__main__":
 	# Setting up numbers of cores to use
@@ -66,13 +62,33 @@ if __name__ == "__main__":
 	# Not a good way if you don't want to freeze your computer
 	# wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
 	wordlists = divide_list('', cpu_cores) # edit to your wordlist
+	gpg_file = open(target, 'rb')
 	start = time.time()
 	# Source: https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments
 	# Starting workers
 	print("Starting workers", time.time() - start)
-	with poolcontext(processes=cpu_cores) as pool:
-		result_imap = pool.imap(brute_force_simple_unpack, product(wordlists, repeat=1))
-	for i in result_imap:
-		print("\nResults: ", i)
+	NUM_PROCESSES = cpu_cores
+	TASKS = [(brute_force_simple, (wordlist, gpg_file, start)) for wordlist in list_wordlist]
+
+	# Setting queues
+	q = mp.Queue()
+	done = mp.Queue()
+
+	# Submitting
+	for task in TASKS:
+		q.put(task)
+
+	# Start
+	for process in range(NUM_PROCESSES):
+		mp.Process(target=worker, args=(q, done)).start()
+	# Results
+	print('Results: \n')
+	for i in range(len(TASKS)):
+	        print('\n', done.get())
+	# Then, stop done
+	for i in range(NUM_PROCESSES):
+        	q.put('STOP')
+
+	print("Elapsed time: ", time.time() - start)
 	end = time.time() - start
 	print("End of process, time elapsed: {}".format(end))
