@@ -3,6 +3,8 @@ import sys
 import time
 
 import multiprocessing as mp
+from itertools import product
+from contextlib import contextmanager
 import gnupg
 
 
@@ -31,7 +33,7 @@ def divide_list(wordlist, num_to_split):
 	except Exception as exception:
 		print(exception)
 
-def brute_force_simple(pool, wordlist, gpg_file):
+def brute_force_simple(wordlist, gpg_file):
 	gpg = gnupg.GPG()
 	with open(wordlist, 'rb') as words:
 		pwd_list = words.read().splitlines()
@@ -39,12 +41,23 @@ def brute_force_simple(pool, wordlist, gpg_file):
 			try:
 				with open(gpg_file, 'rb') as f:
 					decrypted_file = gpg.decrypt_file(f, 
-								passphrase=password_attempt)
+								passphrase=pwd)
 					if decrypted_file.ok:
 						print('status: ', decrypted_file.status)
 						print('stderr: ', decrypted_file.stderr)
+						return pwd
 			except Exception as e:
 				print("Exception: ", e)
+
+
+def brute_force_simple_unpack(args):
+	return brute_force_simple(*args)
+
+@contextmanager
+def poolcontext(*args, **kwargs):
+    pool = mp.Pool(*args, **kwargs)
+    yield pool
+    pool.terminate()
 
 if __name__ == "__main__":
 	# Setting up numbers of cores to use
@@ -56,7 +69,12 @@ if __name__ == "__main__":
 	#TODO: argparse for any wordlist and gpg file
 	divide_list('rockyou.txt', cpu_cores) # edit to your wordlist
 	target = 'lab1.gpg' # edit to your GPG file
+	wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
 	start = time.time()
-
+	# Source: https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments
 	# Starting workers
-	with mp.Pool(processes=cpu_cores) as pool:
+	with poolcontext(processes=cpu_cores) as pool:
+		result = pool.map(brute_force_simple_unpack, product(wordlists, repeat=1))
+	end = time.time() - start
+	print("End of process, time elapsed: {}".format(end))
+	print("Results: ", result)
