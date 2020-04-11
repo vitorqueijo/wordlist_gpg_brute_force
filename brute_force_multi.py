@@ -28,8 +28,9 @@ def chunkfy_list(wordlist):
 	try:
 		with open(wordlist, 'rb') as words:
 			wd = words.read().splitlines()
+			print("Tamanho da wd: ", len(wd))
 			size_wd = len(wd)
-			chunks = [wd[line:line+8000] for line in range(0, size_wd, 10000)]
+			chunks = [wd[line:line+18000] for line in range(0, size_wd, 18000)]
 
 	except OverflowError as error:
 		print("OverFlow: ", error)
@@ -37,46 +38,44 @@ def chunkfy_list(wordlist):
 		print("Exception in divided: ", exception)
 	return chunks
 
-def gpg_attempt(gpg, wordlist):
-	for pwd in wordlist:
-		attemp = gpg.decrypt_file('', passphrase=pwd)
+def gpg_attempt(gpg, wordlist, name):
+	start = time.time()
+	print("gpg attempt: ", name)
+	for i, pwd in enumerate(wordlist):
+		attemp = gpg.decrypt_file('', passphrase=str(pwd))
 		if attemp.ok:
-			print('status: ', at.status)
-			print('stderr: ', at.stderr)
-			# print("PASSWORD: ", pwd)
-		at.close()
+			print('status: ', attemp.status)
+			print('stderr: ', attemp.stderr)
+			print("PASSWORD: ", pwd)
+	print("time elapsed for {}: \t".format(name) + str(start - time.time()))
 
-def brute_force_simple(gpg, name, wordlist, sema, pool):
-	time.sleep(0.1)
+def brute_force_simple(gpg, name, wordlist, sema):
 	sema.acquire()
 	# print("Process {} running".format(name))
-
-	time_count = time.time()
 	try:
-		pool.apply_async(gpg_attempt, args=(gpg, wordlist))
+		gpg_attempt(gpg, wordlist, name)
 	except Exception as e:
 		print("Exception: ", e)
-	# print("not yet {}".format(time.time() - time_count))
+	print("not yet {} just ended".format(name))
 	sema.release()
 
 if __name__ == "__main__":
 	print("Attack Initiated!")	
 	start = time.time()
-	resourses = chunkfy_list('rockyou.txt') # edit to your wordlist
+	resourses = chunkfy_list('') # edit to your wordlist
 	print("wordlist chunkfied, elapsed time: ", time.time() - start)
-	print("Setting up concurrency at 2% of all tasks")
+	print("Setting up concurrency at 2")
 	print("Setting up tasks")
-	concurrency = 1
+	concurrency = 2
 	num_tasks = len(resourses)
 	sema = Semaphore(concurrency)
-	pool = mp.Pool(int(mp.cpu_count()/2))
 	print("Number of processes: ", num_tasks)
 	time.sleep(5)		
 	gpg = gnupg.GPG()
 	# Start
 	processes = list()
 	for i, r in enumerate(resourses):
-		process = mp.Process(target=brute_force_simple, args=(gpg, i, r, sema, pool))
+		process = mp.Process(target=brute_force_simple, args=(gpg, i, r, sema))
 		processes.append(process)
 		process.start()
 
