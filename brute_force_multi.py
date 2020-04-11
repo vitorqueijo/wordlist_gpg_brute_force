@@ -1,4 +1,6 @@
 import os
+import sys
+import time
 
 import multiprocessing as mp
 import gnupg
@@ -29,20 +31,18 @@ def divide_list(wordlist, num_to_split):
 	except Exception as exception:
 		print(exception)
 
-def decrypt_gpg(gpg_file):
+def brute_force_simple(pool, wordlist, gpg_file):
 	gpg = gnupg.GPG()
-	with open(gpg_file, 'rb') as f:
-		decrypted_file = gpg.decrypt_file(f, passphrase=password_attempt)
-		if decrypted_file.ok:
-			print('status: ', decrypted_file.status)
-			print('stderr: ', decrypted_file.stderr)
-
-def brute_force_simple(wordlist, gpg_file):
 	with open(wordlist, 'rb') as words:
 		pwd_list = words.read().splitlines()
 		for pwd in pwd_list:
 			try:
-				decrypt_gpg(gpg_file)
+				with open(gpg_file, 'rb') as f:
+					decrypted_file = gpg.decrypt_file(f, 
+								passphrase=password_attempt)
+					if decrypted_file.ok:
+						print('status: ', decrypted_file.status)
+						print('stderr: ', decrypted_file.stderr)
 			except Exception as e:
 				print("Exception: ", e)
 
