@@ -32,17 +32,18 @@ def divide_list(wordlist, num_to_split):
 					n_wordlist = list()
 
 	except OverflowError as error:
-		print(error)
+		print("OverFlow: ", error)
 	except Exception as exception:
-		print(exception)
+		print("Exception in divided: ", exception)
 	return splitted_wordlists
 
-def brute_force_simple(wordlist, gpg_file, time_count):
-	target = 'lab1.txt' # edit to your GPG file
+def brute_force_simple(wordlist):
+	target = '' # edit to your GPG file
 	gpg = gnupg.GPG()
+	time_count = time.time()
 	for pwd in wordlist:
 		try:
-			decrypted_file = gpg.decrypt_file(gpg_file, passphrase=pwd)
+			decrypted_file = gpg.decrypt_file(target, passphrase=pwd)
 			if decrypted_file.ok:
 				print('status: ', decrypted_file.status)
 				print('stderr: ', decrypted_file.stderr)
@@ -58,22 +59,17 @@ if __name__ == "__main__":
 	if cpu_cores > mp.cpu_count() and cpu_cores <= 0:
 		print("setting up to maximum")
 		cpu_cores = mp.cpu_count()
+	NUM_PROCESSES = cpu_cores * 2
 	#TODO: argparse for any wordlist and gpg file
 	# Not a good way if you don't want to freeze your computer
 	# wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
-	wordlists = divide_list('rockyou.txt', cpu_cores) # edit to your wordlist
+	wordlists = divide_list('rockyou.txt', NUM_PROCESSES) # edit to your wordlist
 	gpg_file = open(target, 'rb')
 	start = time.time()
 
 	# Starting workers
 	print("Starting workers", time.time() - start)
-	NUM_PROCESSES = cpu_cores * 2
-	n = (len(wordlists)/(len(wordlists)**2))
-	for wd in wordlists:
-		wordlists_c = [wd[i * n:(i + 1) * n] \
-						for i in range((len(my_list) + n - 1) // n )]
-		TASKS = [(brute_force_simple, (wordlist, gpg_file, start)) \
-					for wordlist in wordlists_c]
+	TASKS = [(brute_force_simple, w) for wd in wordlists]
 
 	# Setting queues
 	q = mp.Queue()
