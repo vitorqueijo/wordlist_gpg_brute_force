@@ -61,8 +61,8 @@ def poolcontext(*args, **kwargs):
 
 if __name__ == "__main__":
 	# Setting up numbers of cores to use
-	print("There're {} cores available on machine".format(mp.cpu_count())
-	cpu_cores = input(int("How many cores do you want to use?"))
+	print("There're {} cores available on machine".format(mp.cpu_count()))
+	cpu_cores = int(input("How many cores do you want to use?"))
 	if cpu_cores > mp.cpu_count() and cpu_cores <= 0:
 		print("setting up to maximum")
 		cpu_cores = mp.cpu_count()
