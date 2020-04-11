@@ -13,41 +13,36 @@ def divide_list(wordlist, num_to_split):
 		print("Changing to {} as a default".format(mp.cpu_count()))
 		num_to_split = mp.cpu_count()
 	num_to_split = 4
-	splitted_wordlist = None
+	splitted_wordlists = list()
+	n_wordlist = list()
 	try:
 		with open(wordlist, 'rb') as words:
 			wd = words.read().splitlines()
 			for n_line, line in enumerate(wd):
+				n_wordlist.append(line)
 				if n_line % num_to_split == 0:
-					if splitted_wordlist:
-						splitted_wordlist.close()
-					n_splitted = str(os.path.splittext(wordlist)[0]) + 
-							"_" + str(n_line+num_to_split) +
-							str(os.path.splittext(wordlist)[1])
-					splitted_wordlist = open(n_splitted, "wb")
-				splitted_wordlist.write(str(line))
-			if splitted_wordlist:
-				splitted_wordlist.close()
+					splitted_wordlists.append([splitted_wordlists])
+					n_wordlist = list()
+
 	except OverflowError as error:
 		print(error)
 	except Exception as exception:
 		print(exception)
+	return splitted_wordlists
 
-def brute_force_simple(wordlist, gpg_file):
+def brute_force_simple(wordlist):
 	gpg = gnupg.GPG()
-	with open(wordlist, 'rb') as words:
-		pwd_list = words.read().splitlines()
-		for pwd in pwd_list:
-			try:
-				with open(gpg_file, 'rb') as f:
-					decrypted_file = gpg.decrypt_file(f, 
-								passphrase=pwd)
-					if decrypted_file.ok:
-						print('status: ', decrypted_file.status)
-						print('stderr: ', decrypted_file.stderr)
-						return pwd
-			except Exception as e:
-				print("Exception: ", e)
+	for pwd in wordlist:
+		try:
+			with open('lab1.gpg', 'rb') as f:
+				decrypted_file = gpg.decrypt_file(f, 
+							passphrase=pwd)
+				if decrypted_file.ok:
+					print('status: ', decrypted_file.status)
+					print('stderr: ', decrypted_file.stderr)
+					return pwd
+		except Exception as e:
+			print("Exception: ", e)
 
 
 def brute_force_simple_unpack(args):
@@ -67,14 +62,17 @@ if __name__ == "__main__":
 		print("setting up to maximum")
 		cpu_cores = mp.cpu_count()
 	#TODO: argparse for any wordlist and gpg file
-	divide_list('', cpu_cores) # edit to your wordlist
-	target = '' # edit to your GPG file
-	wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
+	target = 'lab1.gpg' # edit to your GPG file
+	# Not a good way if you don't want to freeze your computer
+	# wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
+	wordlists = divide_list('rockyou.txt', cpu_cores) # edit to your wordlist
 	start = time.time()
 	# Source: https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments
 	# Starting workers
+	print("Starting workers", time.time() - start)
 	with poolcontext(processes=cpu_cores) as pool:
-		result = pool.map(brute_force_simple_unpack, product(wordlists, repeat=1))
+		result_imap = pool.imap(brute_force_simple_unpack, product(wordlists, repeat=1))
+	for i in result_imap:
+		print("\nResults: ", i)
 	end = time.time() - start
 	print("End of process, time elapsed: {}".format(end))
-	print("Results: ", result)
