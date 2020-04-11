@@ -3,7 +3,9 @@ import sys
 import time
 
 from multiprocessing import Semaphore
+import psutil
 import multiprocessing as mp
+
 import gnupg
 
 
@@ -17,6 +19,10 @@ import gnupg
 #    result = func(*args)
 #    return '%s says that %s%s = %s' % \
 #       (mp.current_process().name, func.__name__, args, result)
+
+def limit_cpu_usage():
+	pid = psutil.Process(os.getpid())
+	pid.nice(19)
 
 def chunkfy_list(wordlist):
 	try:
@@ -32,6 +38,7 @@ def chunkfy_list(wordlist):
 	return chunks
 
 def brute_force_simple(name, wordlist, sema):
+	time.sleep(0.01)
 	sema.acquire()
 	print("Process {} running".format(name))
 	target = 'lab1.gpg' # edit to your GPG file
@@ -44,10 +51,12 @@ def brute_force_simple(name, wordlist, sema):
 				print('status: ', decrypted_file.status)
 				print('stderr: ', decrypted_file.stderr)
 				print("PASSWORD: ", pwd)
+				target.close()
 				sema.release()
 		except Exception as e:
 			print("Exception: ", e)
 	print("not yet {}".format(time.time() - time_count))
+	target.close()
 	sema.release()
 
 if __name__ == "__main__":
