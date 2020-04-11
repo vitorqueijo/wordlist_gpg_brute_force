@@ -53,7 +53,10 @@ if __name__ == "__main__":
 	if cpu_cores > mp.cpu_count() and cpu_cores <= 0:
 		print("setting up to maximum")
 		cpu_cores = mp.cpu_count()
-	
-	divide_list('rockyou.txt', cpu_cores)
+	#TODO: argparse for any wordlist and gpg file
+	divide_list('rockyou.txt', cpu_cores) # edit to your wordlist
+	target = 'lab1.gpg' # edit to your GPG file
+	start = time.time()
+
 	# Starting workers
 	with mp.Pool(processes=cpu_cores) as pool:
