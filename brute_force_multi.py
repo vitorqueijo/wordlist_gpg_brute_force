@@ -31,10 +31,11 @@ def divide_list(wordlist, num_to_split):
 	return splitted_wordlists
 
 def brute_force_simple(wordlist):
+	target = '' # edit to your GPG file
 	gpg = gnupg.GPG()
 	for pwd in wordlist:
 		try:
-			with open('lab1.gpg', 'rb') as f:
+			with open(target, 'rb') as f:
 				decrypted_file = gpg.decrypt_file(f, 
 							passphrase=pwd)
 				if decrypted_file.ok:
@@ -62,7 +63,6 @@ if __name__ == "__main__":
 		print("setting up to maximum")
 		cpu_cores = mp.cpu_count()
 	#TODO: argparse for any wordlist and gpg file
-	target = '' # edit to your GPG file
 	# Not a good way if you don't want to freeze your computer
 	# wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
 	wordlists = divide_list('', cpu_cores) # edit to your wordlist
