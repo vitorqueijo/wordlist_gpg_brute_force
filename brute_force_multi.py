@@ -41,12 +41,12 @@ def brute_force_simple(name, wordlist, sema):
 	time.sleep(0.01)
 	sema.acquire()
 	print("Process {} running".format(name))
-	target = 'lab1.gpg' # edit to your GPG file
+
 	gpg = gnupg.GPG()
+	target = gpg.decrypt_file('lab1.gpg', passphrase=pwd)
 	time_count = time.time()
 	for pwd in wordlist:
 		try:
-			decrypted_file = gpg.decrypt_file(target, passphrase=pwd)
 			if decrypted_file.ok:
 				print('status: ', decrypted_file.status)
 				print('stderr: ', decrypted_file.stderr)
@@ -60,15 +60,6 @@ def brute_force_simple(name, wordlist, sema):
 	sema.release()
 
 if __name__ == "__main__":
-	# Setting up numbers of cores to use
-	#print("There're {} cores available on machine".format(mp.cpu_count()))
-	#cpu_cores = int(input("How many cores do you want to use?\n"))
-	#if cpu_cores > mp.cpu_count() and cpu_cores <= 0:
-	#	print("setting up to maximum")
-	#	cpu_cores = mp.cpu_count()
-	#TODO: argparse for any wordlist and gpg file
-	# Not a good way if you don't want to freeze your computer
-	# wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
 	print("Attack Initiated!")	
 	start = time.time()
 	resourses = chunkfy_list('rockyou.txt') # edit to your wordlist
