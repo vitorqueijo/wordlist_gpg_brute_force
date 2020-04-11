@@ -67,8 +67,8 @@ if __name__ == "__main__":
 		print("setting up to maximum")
 		cpu_cores = mp.cpu_count()
 	#TODO: argparse for any wordlist and gpg file
-	divide_list('rockyou.txt', cpu_cores) # edit to your wordlist
-	target = 'lab1.gpg' # edit to your GPG file
+	divide_list('', cpu_cores) # edit to your wordlist
+	target = '' # edit to your GPG file
 	wordlists = [wd for wd in os.listdir('.') if os.path.isfile(wd) if wd.endswith("_*.txt")]
 	start = time.time()
 	# Source: https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments
